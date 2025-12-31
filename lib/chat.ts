@@ -79,3 +79,12 @@ export async function getConversations(userId: string) {
 }
 
 
+export async function getLastMessage(conversationId: string) {
+  return supabase
+    .from('messages')
+    .select('content, created_at')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+}

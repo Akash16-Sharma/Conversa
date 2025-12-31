@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthGuard } from '@/lib/useAuthGuard'
-import { getConversations } from '@/lib/chat'
+import { getConversations, getLastMessage } from '@/lib/chat'
 
 export default function ConversationsPage() {
   useAuthGuard(true)
@@ -12,6 +12,7 @@ export default function ConversationsPage() {
   const router = useRouter()
   const [userId, setUserId] = useState('')
   const [conversations, setConversations] = useState<any[]>([])
+  const [lastMessages, setLastMessages] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,7 +23,20 @@ export default function ConversationsPage() {
       setUserId(data.user.id)
 
       const { data: convos } = await getConversations(data.user.id)
-      setConversations(convos || [])
+      const conversationList = convos || []
+      setConversations(conversationList)
+
+      // 🔹 Fetch last message for each conversation
+      const lastMessageMap: Record<string, string> = {}
+
+      for (const convo of conversationList) {
+        const { data } = await getLastMessage(convo.id)
+        if (data?.content) {
+          lastMessageMap[convo.id] = data.content
+        }
+      }
+
+      setLastMessages(lastMessageMap)
       setLoading(false)
     }
 
@@ -71,12 +85,12 @@ export default function ConversationsPage() {
                 </div>
 
                 {/* Text */}
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <p className="font-medium text-gray-900">
                     {otherProfile?.full_name || 'Unknown User'}
                   </p>
-                  <p className="text-sm text-gray-500">
-                    Tap to continue conversation
+                  <p className="text-sm text-gray-500 truncate">
+                    {lastMessages[convo.id] || 'No messages yet'}
                   </p>
                 </div>
 
