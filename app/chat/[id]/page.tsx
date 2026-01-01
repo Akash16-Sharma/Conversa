@@ -28,14 +28,14 @@ export default function ChatPage() {
 
   const bottomRef = useRef<HTMLDivElement | null>(null)
 
-  // 🔒 IMPORTANT: keep channels isolated
+  // keep channels isolated
   const messageChannelRef = useRef<any>(null)
   const typingChannelRef = useRef<any>(null)
 
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isTypingRef = useRef(false)
 
-  /* ───────────────── Initial load (NO REALTIME YET) ───────────────── */
+  /* ───────────── Initial load ───────────── */
   useEffect(() => {
     const load = async () => {
       const { data } = await supabase.auth.getUser()
@@ -46,13 +46,14 @@ export default function ChatPage() {
       const { data: msgs } = await getMessages(id)
       setMessages(msgs || [])
 
+      // mark read on open
       await markConversationRead(id, data.user.id)
     }
 
     load()
   }, [id])
 
-  /* ───────────────── Realtime messages ONLY ───────────────── */
+  /* ───────────── Realtime messages ───────────── */
   useEffect(() => {
     if (!userId) return
 
@@ -83,7 +84,7 @@ export default function ChatPage() {
     }
   }, [id, userId])
 
-  /* ───────────────── Typing indicator (UNCHANGED LOGIC) ───────────────── */
+  /* ───────────── Typing indicator (presence) ───────────── */
   useEffect(() => {
     if (!userId) return
 
@@ -122,12 +123,12 @@ export default function ChatPage() {
     }
   }, [id, userId])
 
-  /* ───────────────── Auto scroll ───────────────── */
+  /* ───────────── Auto scroll ───────────── */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, otherTyping])
 
-  /* ───────────────── Typing handler (UNCHANGED) ───────────────── */
+  /* ───────────── Typing handler ───────────── */
   const handleTyping = (value: string) => {
     setText(value)
 
@@ -146,7 +147,7 @@ export default function ChatPage() {
     }, 1000)
   }
 
-  /* ───────────────── Send message ───────────────── */
+  /* ───────────── Send message ───────────── */
   const handleSend = async () => {
     if (!text.trim()) return
 
@@ -204,13 +205,12 @@ export default function ChatPage() {
           })}
 
           {otherTyping && (
-  <div className="flex items-center gap-1 ml-2">
-    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
-  </div>
-)}
-
+            <div className="flex items-center gap-1 ml-2">
+              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+            </div>
+          )}
 
           <div ref={bottomRef} />
         </div>
@@ -222,7 +222,7 @@ export default function ChatPage() {
               value={text}
               onChange={e => handleTyping(e.target.value)}
               placeholder="Type something thoughtful…"
-              className="flex-1 bg-transparent text-sm focus:outline-none"
+              className="flex-1 bg-transparent focus:outline-none text-sm"
             />
             <button
               onClick={handleSend}

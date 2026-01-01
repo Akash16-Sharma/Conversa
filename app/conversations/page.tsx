@@ -21,10 +21,10 @@ export default function ConversationsPage() {
   const [lastMessages, setLastMessages] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
-  // Tracks which conversation is currently open
+  // Track which conversation is currently open
   const openConversationRef = useRef<string | null>(null)
 
-  /* ───────────────── Helper: refresh unread from DB ───────────────── */
+  /* ───────────────── Refresh unread from DB ───────────────── */
   const refreshUnreadCounts = async (
     uid: string,
     convos: any[]
@@ -41,7 +41,6 @@ export default function ConversationsPage() {
   /* ───────────────── Initial load ───────────────── */
   useEffect(() => {
     const load = async () => {
-      // Reset open chat when inbox mounts
       openConversationRef.current = null
 
       const { data } = await supabase.auth.getUser()
@@ -65,7 +64,7 @@ export default function ConversationsPage() {
 
       setLastMessages(lastMsgMap)
 
-      // 🔑 Always sync unread from DB on load
+      // Always sync unread from DB
       await refreshUnreadCounts(uid, list)
 
       setLoading(false)
@@ -99,7 +98,7 @@ export default function ConversationsPage() {
             [msg.conversation_id]: msg.content,
           }))
 
-          // Increment unread ONLY if chat not open
+          // Increment unread if chat not open
           if (openConversationRef.current !== msg.conversation_id) {
             setUnreadCounts(prev => ({
               ...prev,
@@ -116,26 +115,11 @@ export default function ConversationsPage() {
     }
   }, [userId])
 
-  /* ───────────────── Re-sync when page regains focus ───────────────── */
-  useEffect(() => {
-    const handleFocus = () => {
-      if (userId && conversations.length > 0) {
-        refreshUnreadCounts(userId, conversations)
-      }
-    }
-
-    window.addEventListener('focus', handleFocus)
-
-    return () => {
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [userId, conversations])
-
   /* ───────────────── Open chat ───────────────── */
   const handleOpenChat = (conversationId: string) => {
     openConversationRef.current = conversationId
 
-    // Optimistic reset
+    // Optimistic UI reset
     setUnreadCounts(prev => ({
       ...prev,
       [conversationId]: 0,

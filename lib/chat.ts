@@ -57,6 +57,10 @@ export async function sendMessage(
     content,
   })
 }
+
+/**
+ * Get all conversations for a user
+ */
 export async function getConversations(userId: string) {
   return supabase
     .from('conversations')
@@ -78,10 +82,13 @@ export async function getConversations(userId: string) {
     .order('created_at', { ascending: false })
 }
 
-
-// get unread count
-export async function getUnreadCount(conversationId: string,userId: string) {
-  
+/**
+ * Get unread message count for a conversation
+ */
+export async function getUnreadCount(
+  conversationId: string,
+  userId: string
+) {
   const { data: read } = await supabase
     .from('conversation_reads')
     .select('last_read_at')
@@ -101,7 +108,9 @@ export async function getUnreadCount(conversationId: string,userId: string) {
   return count || 0
 }
 
-// mark conversation as read
+/**
+ * Mark conversation as read
+ */
 export async function markConversationRead(
   conversationId: string,
   userId: string
@@ -113,8 +122,9 @@ export async function markConversationRead(
   })
 }
 
-
-// get last message preview for inbox
+/**
+ * Get last message preview for inbox
+ */
 export async function getLastMessage(conversationId: string) {
   return supabase
     .from('messages')
