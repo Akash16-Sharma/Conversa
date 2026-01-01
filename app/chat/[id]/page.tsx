@@ -1,76 +1,160 @@
 'use client'
 
-import { RealtimeChannel } from '@supabase/supabase-js'
 import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
-import { getMessages, sendMessage } from '@/lib/chat'
+import {
+  getMessages,
+  sendMessage,
+  markConversationRead,
+} from '@/lib/chat'
 import { useAuthGuard } from '@/lib/useAuthGuard'
+
+type PresencePayload = {
+  presence_ref: string
+  typing?: boolean
+}
 
 export default function ChatPage() {
   useAuthGuard(true)
 
-  const { id } = useParams()
+  const { id } = useParams<{ id: string }>()
   const router = useRouter()
 
   const [messages, setMessages] = useState<any[]>([])
   const [text, setText] = useState('')
   const [userId, setUserId] = useState('')
-  const bottomRef = useRef<HTMLDivElement>(null)
+  const [otherTyping, setOtherTyping] = useState(false)
 
-  // 🔹 Load messages + setup realtime
+  const bottomRef = useRef<HTMLDivElement | null>(null)
+
+  // 🔒 IMPORTANT: keep channels isolated
+  const messageChannelRef = useRef<any>(null)
+  const typingChannelRef = useRef<any>(null)
+
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isTypingRef = useRef(false)
+
+  /* ───────────────── Initial load (NO REALTIME YET) ───────────────── */
   useEffect(() => {
-    let channel: RealtimeChannel
-
     const load = async () => {
       const { data } = await supabase.auth.getUser()
       if (!data.user) return
 
       setUserId(data.user.id)
 
-      // 1️⃣ Initial fetch
-      const { data: msgs } = await getMessages(id as string)
+      const { data: msgs } = await getMessages(id)
       setMessages(msgs || [])
 
-      // 2️⃣ Realtime subscription
-      channel = supabase
-        .channel(`chat:${id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'messages',
-            filter: `conversation_id=eq.${id}`,
-          },
-          payload => {
-            setMessages(prev => [...prev, payload.new])
-          }
-        )
-        .subscribe()
+      await markConversationRead(id, data.user.id)
     }
 
     load()
-
-    // 3️⃣ Cleanup
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
   }, [id])
 
-  // 🔹 Auto-scroll
+  /* ───────────────── Realtime messages ONLY ───────────────── */
+  useEffect(() => {
+    if (!userId) return
+
+    messageChannelRef.current = supabase
+      .channel(`messages:${id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${id}`,
+        },
+        async payload => {
+          setMessages(prev => [...prev, payload.new])
+
+          if (payload.new.sender_id !== userId) {
+            await markConversationRead(id, userId)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      if (messageChannelRef.current) {
+        supabase.removeChannel(messageChannelRef.current)
+      }
+    }
+  }, [id, userId])
+
+  /* ───────────────── Typing indicator (UNCHANGED LOGIC) ───────────────── */
+  useEffect(() => {
+    if (!userId) return
+
+    const channel = supabase.channel(`typing:${id}`, {
+      config: {
+        presence: { key: userId },
+      },
+    })
+
+    channel
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState()
+        const others = Object.keys(state).filter(k => k !== userId)
+
+        let typing = false
+
+        others.forEach(key => {
+          const entries = state[key] as PresencePayload[]
+          entries?.forEach(p => {
+            if (p.typing) typing = true
+          })
+        })
+
+        setOtherTyping(typing)
+      })
+      .subscribe(async status => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ typing: false })
+        }
+      })
+
+    typingChannelRef.current = channel
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [id, userId])
+
+  /* ───────────────── Auto scroll ───────────────── */
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, otherTyping])
 
-  // 🔹 Send message (NO re-fetch)
+  /* ───────────────── Typing handler (UNCHANGED) ───────────────── */
+  const handleTyping = (value: string) => {
+    setText(value)
+
+    if (!isTypingRef.current) {
+      isTypingRef.current = true
+      typingChannelRef.current?.track({ typing: true })
+    }
+
+    if (typingTimeout.current) {
+      clearTimeout(typingTimeout.current)
+    }
+
+    typingTimeout.current = setTimeout(() => {
+      isTypingRef.current = false
+      typingChannelRef.current?.track({ typing: false })
+    }, 1000)
+  }
+
+  /* ───────────────── Send message ───────────────── */
   const handleSend = async () => {
     if (!text.trim()) return
 
-    await sendMessage(id as string, userId, text)
+    await sendMessage(id, userId, text)
     setText('')
+
+    isTypingRef.current = false
+    typingChannelRef.current?.track({ typing: false })
   }
 
   return (
@@ -78,7 +162,7 @@ export default function ChatPage() {
       <div className="w-full max-w-3xl bg-white rounded-3xl shadow-xl flex flex-col overflow-hidden">
 
         {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center gap-3 bg-white">
+        <div className="px-6 py-4 border-b flex items-center gap-3">
           <button
             onClick={() => router.back()}
             className="text-gray-400 hover:text-gray-700"
@@ -89,44 +173,28 @@ export default function ChatPage() {
             U
           </div>
           <div>
-            <p className="font-medium text-gray-900">
-              Conversation
-            </p>
+            <p className="font-medium text-gray-900">Conversation</p>
             <p className="text-xs text-gray-500">
-              Active now
+              {otherTyping ? 'Typing…' : 'Active now'}
             </p>
           </div>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 px-6 py-4 space-y-3 overflow-y-auto bg-gradient-to-b from-white to-indigo-50/30">
-          {messages.map((msg, i) => {
+        <div className="flex-1 px-6 py-4 space-y-3 overflow-y-auto">
+          {messages.map(msg => {
             const isMine = msg.sender_id === userId
-            const prev = messages[i - 1]
-            const isGrouped =
-              prev && prev.sender_id === msg.sender_id
-
             return (
               <div
                 key={msg.id}
-                className={`flex ${
-                  isMine ? 'justify-end' : 'justify-start'
-                }`}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`px-4 py-2 text-sm leading-relaxed max-w-[70%]
+                  className={`px-4 py-2 rounded-2xl text-sm max-w-[70%]
                     ${
                       isMine
-                        ? `bg-indigo-600 text-white ${
-                            isGrouped
-                              ? 'rounded-2xl'
-                              : 'rounded-2xl rounded-br-md'
-                          }`
-                        : `bg-gray-100 text-gray-800 ${
-                            isGrouped
-                              ? 'rounded-2xl'
-                              : 'rounded-2xl rounded-bl-md'
-                          }`
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-100 text-gray-800'
                     }`}
                 >
                   {msg.content}
@@ -134,26 +202,37 @@ export default function ChatPage() {
               </div>
             )
           })}
+
+          {otherTyping && (
+  <div className="flex items-center gap-1 ml-2">
+    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
+    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
+    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+  </div>
+)}
+
+
           <div ref={bottomRef} />
         </div>
 
         {/* Input */}
-        <div className="px-4 py-3 bg-white border-t">
-          <div className="flex items-center gap-3 bg-gray-50 rounded-full px-4 py-2 shadow-inner">
+        <div className="px-4 py-3 border-t">
+          <div className="flex gap-3 bg-gray-50 rounded-full px-4 py-2 shadow-inner">
             <input
               value={text}
-              onChange={e => setText(e.target.value)}
+              onChange={e => handleTyping(e.target.value)}
               placeholder="Type something thoughtful…"
               className="flex-1 bg-transparent text-sm focus:outline-none"
             />
             <button
               onClick={handleSend}
-              className="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-indigo-700 transition"
+              className="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-medium"
             >
               Send
             </button>
           </div>
         </div>
+
       </div>
     </div>
   )
