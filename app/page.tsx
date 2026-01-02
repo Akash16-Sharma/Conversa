@@ -1,77 +1,119 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthGuard } from '@/lib/useAuthGuard'
-import { signOut } from '@/lib/auth'
-import { useRouter } from 'next/navigation'
 
-export default function Home() {
+export default function HomePage() {
   useAuthGuard(true)
 
-  const [user, setUser] = useState<any>(null)
   const router = useRouter()
+  const [name, setName] = useState<string>('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data.user)
-    })
+    const loadProfile = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (!data.user) return
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', data.user.id)
+        .single()
+
+      setName(profile?.full_name || 'there')
+    }
+
+    loadProfile()
   }, [])
 
-  const handleLogout = async () => {
-    await signOut()
-    router.replace('/login')
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-pink-50">
-        <p className="text-gray-500">Loading your space…</p>
-      </div>
-    )
-  }
+  const hour = new Date().getHours()
+  const greeting =
+    hour < 12
+      ? 'Good morning'
+      : hour < 18
+      ? 'Good afternoon'
+      : 'Good evening'
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-pink-50 flex flex-col items-center px-6">
 
-      {/* Top Bar */}
-      <header className="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
-        <h1 className="text-lg font-semibold text-gray-900">
-          Conversa
+      {/* ───────── Top Identity ───────── */}
+      <div className="mt-20 text-center space-y-3">
+        <h1 className="text-3xl font-semibold text-gray-900">
+          {greeting},{' '}
+          <span className="text-indigo-600">
+            {name.split(' ')[0]}
+          </span>{' '}
+          👋
         </h1>
 
-        <button
-          onClick={handleLogout}
-          className="text-sm text-gray-500 hover:text-gray-800 transition"
+        <p className="text-gray-500 text-base">
+          Conversations grow one message at a time.
+        </p>
+      </div>
+
+      {/* ───────── Core Actions ───────── */}
+      <div className="mt-16 w-full max-w-md space-y-6">
+
+        {/* Hero Action */}
+        <div
+          onClick={() => router.push('/match')}
+          className="group cursor-pointer bg-white rounded-3xl p-6 shadow-md hover:shadow-xl transition transform hover:-translate-y-0.5"
         >
-          Logout
-        </button>
-      </header>
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white text-xl">
+              💬
+            </div>
 
-      {/* Main Content */}
-      <main className="px-6 py-10 max-w-2xl mx-auto space-y-6">
+            <div className="flex-1">
+              <p className="text-lg font-semibold text-gray-900">
+                Start a Conversation
+              </p>
+              <p className="text-sm text-gray-500">
+                Find a language partner and say hi
+              </p>
+            </div>
 
-        {/* Welcome Card */}
-        <div className="bg-white rounded-xl shadow-sm p-6 space-y-1">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Welcome back 👋
-          </h2>
-          <p className="text-sm text-gray-500">
-            You’re logged in as {user.email}
-          </p>
+            <span className="text-indigo-400 group-hover:translate-x-1 transition">
+              →
+            </span>
+          </div>
         </div>
 
-        {/* Empty State / Placeholder */}
-        <div className="bg-white rounded-xl shadow-sm p-6 text-center space-y-2">
-          <p className="text-sm text-gray-600">
-            Your language partners will appear here.
-          </p>
-          <p className="text-xs text-gray-400">
-            We’ll help you start meaningful conversations soon.
-          </p>
-        </div>
+        {/* Secondary Action */}
+        <div
+          onClick={() => router.push('/conversations')}
+          className="cursor-pointer bg-white/70 backdrop-blur rounded-2xl p-5 shadow-sm hover:shadow-md transition"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-pink-500 flex items-center justify-center text-white">
+              📥
+            </div>
 
-      </main>
+            <div className="flex-1">
+              <p className="font-medium text-gray-900">
+                Open Inbox
+              </p>
+              <p className="text-sm text-gray-500">
+                Continue where you left off
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ───────── Emotional Filler (Intentional Space) ───────── */}
+      <div className="mt-20 text-center max-w-sm">
+        <p className="text-sm text-gray-400 leading-relaxed">
+          You don’t need perfect words to begin.  
+          Real conversations start with presence, not fluency 🌱
+        </p>
+      </div>
+
+      {/* ───────── Bottom Spacer ───────── */}
+      <div className="flex-1" />
     </div>
   )
 }
