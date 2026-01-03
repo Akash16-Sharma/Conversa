@@ -1,35 +1,69 @@
-# Conversa 🌍
+# Conversa 🌍  
+**Live App:** https://conversa-ashy.vercel.app/
 
-Conversa is a language-exchange platform designed to connect people across the world for real-time language practice.
+Conversa is a language-exchange platform designed to connect people across the world for **real-time language practice**, built with strong emphasis on **product thinking, scalability, and human-centric UX**.
 
-## 🚀 Features (Implemented)
-- Email-based authentication (Login + Auto Signup)
-- Secure session handling with route guards
-- User profile onboarding with language & proficiency selection
-- Emotion-aware, human-centric UI/UX
-- Consistent design system (Calm × Friendly)
+---
+
+## 🚀 Current Features (Implemented)
+
+- **Email-based Authentication**
+  - Login with auto-signup
+  - Secure session handling using Supabase Auth
+
+- **Protected Routing & Access Control**
+  - Route guards for authenticated users
+  - Clean separation between public and private routes
+
+- **User Onboarding Flow**
+  - Profile creation after first login
+  - Language selection
+  - Proficiency level selection
+
+- **Human-Centric UI/UX**
+  - Emotion-aware design decisions
+  - Calm × Friendly visual system
+  - Reduced cognitive load and clean spacing
+
+- **Security-First Backend**
+  - Row Level Security (RLS) enforced at database level
+  - JWT-based authentication
+  - Auth identity separated from product profile data
+
+---
 
 ## 🧠 Tech Stack
-- **Frontend:** Next.js (App Router), TypeScript
-- **Styling:** Tailwind CSS
-- **Backend / DB:** Supabase (PostgreSQL)
-- **Auth & Security:** Supabase Auth, JWT, Row Level Security (RLS)
+
+- **Frontend:** Next.js (App Router), TypeScript  
+- **Styling:** Tailwind CSS  
+- **Backend / Database:** Supabase (PostgreSQL)  
+- **Authentication & Security:** Supabase Auth, JWT, RLS  
+
+---
 
 ## 🏗️ Architecture Highlights
-- Separation of auth identity and product profile
-- Route-level access control
-- Database-level security with RLS
-- Scalable foundation for real-time messaging
 
-## 📌 Roadmap
+- Clear separation of **auth identity** and **application user profile**
+- Route-level protection for secure navigation
+- Database-level authorization using Row Level Security
+- Scalable foundation ready for real-time features
+
+---
+
+## 📌 Product Roadmap (Planned)
+
 - Language partner matching
 - Real-time chat (WebSockets)
 - UX micro-interactions
 - AI-assisted language corrections
 
+---
+
 ## 📄 Design & System Rationale
-See `docs/Conversa_Tech_Design_Explanation_FAANG.pdf`
+
+Detailed technical and design decisions are documented here:  
+`docs/Conversa_Tech_Design_Explanation_FAANG.pdf`
 
 ---
 
-Built with a focus on product thinking, scalability, and user experience.
+Built with a focus on **clarity, scalability, and real-world product standards**.
