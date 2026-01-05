@@ -118,15 +118,15 @@ export default function ConversationsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-rose-50 px-4 py-10">
-        <div className="max-w-md mx-auto space-y-6">
-          <div className="h-8 bg-gray-200 rounded-lg w-32 animate-pulse" />
+      <div className="min-h-screen bg-neutral-50 px-4 py-10">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="h-10 bg-neutral-200 rounded-lg w-40 animate-pulse" />
           {[1, 2, 3, 4].map(i => (
-            <div key={i} className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4 animate-pulse">
-              <div className="w-12 h-12 rounded-full bg-gray-200" />
-              <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 rounded w-32" />
-                <div className="h-3 bg-gray-100 rounded w-48" />
+            <div key={i} className="bg-white rounded-2xl p-5 shadow-md flex items-center gap-4 animate-pulse border border-neutral-200">
+              <div className="w-14 h-14 rounded-full bg-neutral-200" />
+              <div className="flex-1 space-y-3">
+                <div className="h-5 bg-neutral-200 rounded w-36" />
+                <div className="h-4 bg-neutral-100 rounded w-56" />
               </div>
             </div>
           ))}
@@ -137,16 +137,22 @@ export default function ConversationsPage() {
 
   if (conversations.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-rose-50 px-4 flex items-center justify-center">
-        <div className="text-center space-y-4 animate-fade-in">
-          <div className="text-6xl animate-bounce-slow">💬</div>
-          <p className="text-gray-600 font-medium">No conversations yet</p>
-          <p className="text-sm text-gray-400">Start chatting with language partners</p>
+      <div className="min-h-screen bg-neutral-50 px-4 flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-24 h-24 mx-auto rounded-full bg-neutral-100 flex items-center justify-center">
+            <svg className="w-12 h-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-neutral-900 mb-2">No conversations yet</p>
+            <p className="text-neutral-600">Start your language journey by connecting with a partner</p>
+          </div>
           <button
             onClick={() => router.push('/match')}
-            className="mt-4 px-6 py-2 bg-gradient-to-r from-blue-600 to-rose-600 text-white rounded-full font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+            className="px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:from-teal-700 hover:to-teal-800 active:scale-[0.98]"
           >
-            Find Partners
+            Discover Partners
           </button>
         </div>
       </div>
@@ -154,13 +160,18 @@ export default function ConversationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-rose-50 px-4 py-10">
-      <div className="max-w-md mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold text-gray-900 animate-fade-in">
-          Inbox
-        </h1>
+    <div className="min-h-screen bg-neutral-50 px-4 py-10">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-neutral-900">
+            Messages
+          </h1>
+          <span className="text-sm text-neutral-600 bg-white px-3 py-1.5 rounded-full border border-neutral-200">
+            {conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}
+          </span>
+        </div>
 
-        <div className="space-y-3">
+        <div className="space-y-2">
           {conversations.map((convo, index) => {
             const isUserOne = convo.user_one === userId
             const otherProfile = isUserOne
@@ -174,82 +185,42 @@ export default function ConversationsPage() {
               <div
                 key={convo.id}
                 onClick={() => handleOpenChat(convo.id)}
-                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer flex items-center gap-4 group hover:-translate-y-1 border border-gray-100 animate-slide-in"
-                style={{ animationDelay: `${index * 50}ms` }}
+                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex items-center gap-4 group hover:-translate-y-0.5 border border-neutral-200 animate-slide-up"
+                style={{ animationDelay: `${index * 40}ms` }}
               >
-                {/* Avatar */}
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-rose-500 flex items-center justify-center text-white font-semibold shadow-md group-hover:shadow-lg transition-all duration-300 group-hover:scale-110">
-                    {otherProfile?.full_name?.[0] || 'U'}
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-lg font-bold shadow-md group-hover:shadow-lg transition-all group-hover:scale-105">
+                    {otherProfile?.full_name?.[0]?.toUpperCase() || 'U'}
                   </div>
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-400 border-2 border-white rounded-full" />
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-3 border-white rounded-full" />
                 </div>
 
-                {/* Text */}
                 <div className="flex-1 min-w-0">
-                  <p className={`font-medium truncate transition-colors ${unread > 0 ? 'text-gray-900' : 'text-gray-700'} group-hover:text-blue-700`}>
-                    {otherProfile?.full_name || 'Unknown User'}
-                  </p>
-                  <p className={`text-sm truncate transition-colors ${unread > 0 ? 'text-gray-700 font-medium' : 'text-gray-500'}`}>
-                    {preview || 'No messages yet'}
-                  </p>
-                </div>
-
-                {/* Unread badge */}
-                {unread > 0 && (
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center animate-pulse">
-                      <span className="text-xs font-bold text-white">
-                        {unread}
-                      </span>
-                    </div>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`font-semibold truncate transition-colors ${unread > 0 ? 'text-neutral-900' : 'text-neutral-700'} group-hover:text-teal-600`}>
+                      {otherProfile?.full_name || 'Unknown User'}
+                    </p>
+                    {unread > 0 && (
+                      <div className="ml-2 min-w-[24px] h-6 px-2 rounded-full bg-teal-600 flex items-center justify-center">
+                        <span className="text-xs font-bold text-white">
+                          {unread > 99 ? '99+' : unread}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                )}
-
-                {/* Arrow indicator */}
-                <div className="text-gray-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all duration-300">
-                  →
+                  <p className={`text-sm truncate transition-colors ${unread > 0 ? 'text-neutral-700 font-medium' : 'text-neutral-500'}`}>
+                    {preview || 'Start the conversation'}
+                  </p>
                 </div>
+
+                <svg className="w-5 h-5 text-neutral-300 group-hover:text-teal-600 group-hover:translate-x-1 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             )
           })}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        @keyframes slide-in {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-
-        @keyframes bounce-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 0.6s ease-out;
-        }
-
-        .animate-slide-in {
-          animation: slide-in 0.4s ease-out backwards;
-        }
-
-        .animate-bounce-slow {
-          animation: bounce-slow 2s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   )
 }
