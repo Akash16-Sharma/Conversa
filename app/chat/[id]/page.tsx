@@ -159,44 +159,47 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-pink-50 flex justify-center py-6">
-      <div className="w-full max-w-3xl bg-white rounded-3xl shadow-xl flex flex-col overflow-hidden">
-
-        {/* Header */}
-        <div className="px-6 py-4 border-b flex items-center gap-3">
+    <div className="min-h-screen bg-neutral-100 flex justify-center">
+      <div className="w-full max-w-4xl bg-white flex flex-col shadow-2xl">
+        <div className="sticky top-0 z-10 px-6 py-4 bg-white border-b border-neutral-200 flex items-center gap-4 shadow-sm">
           <button
             onClick={() => router.back()}
-            className="text-gray-400 hover:text-gray-700"
+            className="w-10 h-10 rounded-full hover:bg-neutral-100 flex items-center justify-center text-neutral-600 hover:text-neutral-900 transition-colors"
           >
-            ←
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center text-white font-semibold">
-            U
+          <div className="relative">
+            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white font-bold shadow-md">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </div>
+            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full" />
           </div>
-          <div>
-            <p className="font-medium text-gray-900">Conversation</p>
-            <p className="text-xs text-gray-500">
-              {otherTyping ? 'Typing…' : 'Active now'}
+          <div className="flex-1">
+            <p className="font-semibold text-neutral-900">Language Partner</p>
+            <p className="text-sm text-neutral-600">
+              {otherTyping ? 'typing...' : 'online'}
             </p>
           </div>
         </div>
 
-        {/* Messages */}
-        <div className="flex-1 px-6 py-4 space-y-3 overflow-y-auto">
+        <div className="flex-1 px-6 py-6 space-y-4 overflow-y-auto bg-neutral-50">
           {messages.map(msg => {
             const isMine = msg.sender_id === userId
             return (
               <div
                 key={msg.id}
-                className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${isMine ? 'justify-end' : 'justify-start'} animate-fade-in`}
               >
                 <div
-                  className={`px-4 py-2 rounded-2xl text-sm max-w-[70%]
-                    ${
-                      isMine
-                        ? 'bg-indigo-600 text-white'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
+                  className={`px-4 py-3 rounded-2xl text-sm max-w-[75%] shadow-sm ${
+                    isMine
+                      ? 'bg-gradient-to-br from-teal-600 to-teal-700 text-white rounded-br-md'
+                      : 'bg-white text-neutral-900 border border-neutral-200 rounded-bl-md'
+                  }`}
                 >
                   {msg.content}
                 </div>
@@ -205,34 +208,43 @@ export default function ChatPage() {
           })}
 
           {otherTyping && (
-            <div className="flex items-center gap-1 ml-2">
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:150ms]" />
-              <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="flex justify-start">
+              <div className="bg-white border border-neutral-200 px-5 py-3 rounded-2xl rounded-bl-md shadow-sm flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" />
+                <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce [animation-delay:150ms]" />
+                <span className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce [animation-delay:300ms]" />
+              </div>
             </div>
           )}
 
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
-        <div className="px-4 py-3 border-t">
-          <div className="flex gap-3 bg-gray-50 rounded-full px-4 py-2 shadow-inner">
-            <input
-              value={text}
-              onChange={e => handleTyping(e.target.value)}
-              placeholder="Type something thoughtful…"
-              className="flex-1 bg-transparent focus:outline-none text-sm"
-            />
+        <div className="sticky bottom-0 px-6 py-4 bg-white border-t border-neutral-200 shadow-lg">
+          <div className="flex gap-3 items-end">
+            <div className="flex-1 relative">
+              <input
+                value={text}
+                onChange={e => handleTyping(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                placeholder="Type your message..."
+                className="w-full border border-neutral-300 rounded-xl px-4 py-3 pr-12 text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all resize-none"
+              />
+            </div>
             <button
               onClick={handleSend}
-              className="bg-indigo-600 text-white px-4 py-1.5 rounded-full text-sm font-medium"
+              disabled={!text.trim()}
+              className="shrink-0 w-12 h-12 bg-gradient-to-br from-teal-600 to-teal-700 disabled:from-neutral-300 disabled:to-neutral-400 text-white rounded-xl font-semibold shadow-lg disabled:shadow-none transition-all hover:shadow-xl active:scale-95 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              Send
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
             </button>
           </div>
+          <p className="text-xs text-neutral-500 mt-2 text-center">
+            Press Enter to send
+          </p>
         </div>
-
       </div>
     </div>
   )

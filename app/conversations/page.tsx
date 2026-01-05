@@ -21,10 +21,8 @@ export default function ConversationsPage() {
   const [lastMessages, setLastMessages] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
 
-  // Track which conversation is currently open
   const openConversationRef = useRef<string | null>(null)
 
-  /* ───────────────── Refresh unread from DB ───────────────── */
   const refreshUnreadCounts = async (
     uid: string,
     convos: any[]
@@ -38,7 +36,6 @@ export default function ConversationsPage() {
     setUnreadCounts(unreadMap)
   }
 
-  /* ───────────────── Initial load ───────────────── */
   useEffect(() => {
     const load = async () => {
       openConversationRef.current = null
@@ -63,17 +60,13 @@ export default function ConversationsPage() {
       }
 
       setLastMessages(lastMsgMap)
-
-      // Always sync unread from DB
       await refreshUnreadCounts(uid, list)
-
       setLoading(false)
     }
 
     load()
   }, [])
 
-  /* ───────────────── Realtime unread increment ───────────────── */
   useEffect(() => {
     if (!userId) return
 
@@ -89,16 +82,13 @@ export default function ConversationsPage() {
         payload => {
           const msg = payload.new
 
-          // Ignore my own messages
           if (msg.sender_id === userId) return
 
-          // Update last message preview
           setLastMessages(prev => ({
             ...prev,
             [msg.conversation_id]: msg.content,
           }))
 
-          // Increment unread if chat not open
           if (openConversationRef.current !== msg.conversation_id) {
             setUnreadCounts(prev => ({
               ...prev,
@@ -115,11 +105,9 @@ export default function ConversationsPage() {
     }
   }, [userId])
 
-  /* ───────────────── Open chat ───────────────── */
   const handleOpenChat = (conversationId: string) => {
     openConversationRef.current = conversationId
 
-    // Optimistic UI reset
     setUnreadCounts(prev => ({
       ...prev,
       [conversationId]: 0,
@@ -128,33 +116,63 @@ export default function ConversationsPage() {
     router.push(`/chat/${conversationId}`)
   }
 
-  /* ───────────────── UI states ───────────────── */
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-pink-50">
-        <p className="text-gray-500">Loading your inbox…</p>
+      <div className="min-h-screen bg-neutral-50 px-4 py-10">
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="h-10 bg-neutral-200 rounded-lg w-40 animate-pulse" />
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white rounded-2xl p-5 shadow-md flex items-center gap-4 animate-pulse border border-neutral-200">
+              <div className="w-14 h-14 rounded-full bg-neutral-200" />
+              <div className="flex-1 space-y-3">
+                <div className="h-5 bg-neutral-200 rounded w-36" />
+                <div className="h-4 bg-neutral-100 rounded w-56" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     )
   }
 
   if (conversations.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 to-pink-50">
-        <p className="text-gray-500">No conversations yet</p>
+      <div className="min-h-screen bg-neutral-50 px-4 flex items-center justify-center">
+        <div className="text-center space-y-6 max-w-md">
+          <div className="w-24 h-24 mx-auto rounded-full bg-neutral-100 flex items-center justify-center">
+            <svg className="w-12 h-12 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-neutral-900 mb-2">No conversations yet</p>
+            <p className="text-neutral-600">Start your language journey by connecting with a partner</p>
+          </div>
+          <button
+            onClick={() => router.push('/match')}
+            className="px-6 py-3 bg-gradient-to-r from-teal-600 to-teal-700 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all hover:from-teal-700 hover:to-teal-800 active:scale-[0.98]"
+          >
+            Discover Partners
+          </button>
+        </div>
       </div>
     )
   }
 
-  /* ───────────────── Render ───────────────── */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-pink-50 px-4 py-10">
-      <div className="max-w-md mx-auto space-y-6">
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Inbox
-        </h1>
+    <div className="min-h-screen bg-neutral-50 px-4 py-10">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-neutral-900">
+            Messages
+          </h1>
+          <span className="text-sm text-neutral-600 bg-white px-3 py-1.5 rounded-full border border-neutral-200">
+            {conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}
+          </span>
+        </div>
 
-        <div className="space-y-3">
-          {conversations.map(convo => {
+        <div className="space-y-2">
+          {conversations.map((convo, index) => {
             const isUserOne = convo.user_one === userId
             const otherProfile = isUserOne
               ? convo.user_two_profile
@@ -167,32 +185,37 @@ export default function ConversationsPage() {
               <div
                 key={convo.id}
                 onClick={() => handleOpenChat(convo.id)}
-                className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4"
+                className="bg-white rounded-2xl p-5 shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex items-center gap-4 group hover:-translate-y-0.5 border border-neutral-200 animate-slide-up"
+                style={{ animationDelay: `${index * 40}ms` }}
               >
-                {/* Avatar */}
-                <div className="w-12 h-12 shrink-0 rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 flex items-center justify-center text-white font-semibold">
-                  {otherProfile?.full_name?.[0] || 'U'}
-                </div>
-
-                {/* Text */}
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 truncate">
-                    {otherProfile?.full_name || 'Unknown User'}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {preview || 'No messages yet'}
-                  </p>
-                </div>
-
-                {/* Unread badge */}
-                {unread > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                    <span className="text-xs font-medium text-indigo-600">
-                      {unread}
-                    </span>
+                <div className="relative shrink-0">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center text-white text-lg font-bold shadow-md group-hover:shadow-lg transition-all group-hover:scale-105">
+                    {otherProfile?.full_name?.[0]?.toUpperCase() || 'U'}
                   </div>
-                )}
+                  <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-3 border-white rounded-full" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`font-semibold truncate transition-colors ${unread > 0 ? 'text-neutral-900' : 'text-neutral-700'} group-hover:text-teal-600`}>
+                      {otherProfile?.full_name || 'Unknown User'}
+                    </p>
+                    {unread > 0 && (
+                      <div className="ml-2 min-w-[24px] h-6 px-2 rounded-full bg-teal-600 flex items-center justify-center">
+                        <span className="text-xs font-bold text-white">
+                          {unread > 99 ? '99+' : unread}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <p className={`text-sm truncate transition-colors ${unread > 0 ? 'text-neutral-700 font-medium' : 'text-neutral-500'}`}>
+                    {preview || 'Start the conversation'}
+                  </p>
+                </div>
+
+                <svg className="w-5 h-5 text-neutral-300 group-hover:text-teal-600 group-hover:translate-x-1 transition-all shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             )
           })}
